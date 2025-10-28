@@ -180,3 +180,69 @@ To further improve accuracy:
 ---
 
 Would you like me to modify this code to include **few-shot examples** (which improves JSON consistency by ~20–30%)?
+
+
+
+
+
+--------------------------------------------------
+
+
+
+Perfect ✅ — you only want to **remove these exact special characters**:
+`/`, `\`, `-`, `<`, `>`, `,`
+and keep **everything else** (numbers, letters, spaces, periods, etc.) intact.
+
+Here’s the **modified and clean version** of your text cleaning code 👇
+
+---
+
+### 🧹 Clean Text Function (Custom Symbols Removal)
+
+```python
+import pyspark.sql.functions as F
+from pyspark.sql.types import StringType
+import re
+from bs4 import BeautifulSoup
+
+# --------------------------------------------------
+# ✅ Step: Custom Clean Function
+# Removes only / \ - < > , while keeping all other characters
+# --------------------------------------------------
+def clean_text(text):
+    if not text:
+        return ""
+    # Remove HTML tags if any
+    text = BeautifulSoup(text, "html.parser").get_text()
+    # Remove only the specified characters
+    text = re.sub(r"[\/\\\<\>\-,]", " ", text)
+    # Replace multiple spaces with a single space
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+# Register UDF for Spark
+clean_text_udf = F.udf(clean_text, StringType())
+
+# --------------------------------------------------
+# ✅ Example usage:
+# --------------------------------------------------
+df_clean = df.withColumn("cleaned_note", clean_text_udf(F.col("RECOMMENDATION_COMMENTS__C")))
+display(df_clean.select("LOAN_APPLICATION__C", "cleaned_note"))
+```
+
+---
+
+### 🧠 Explanation
+
+| Step                                  | What It Does                               |
+| ------------------------------------- | ------------------------------------------ |
+| `BeautifulSoup(...).get_text()`       | Removes HTML tags (if any)                 |
+| `re.sub(r"[\/\\\<\>\-,]", " ", text)` | Removes only `/ \ - < > ,`                 |
+| `re.sub(r"\s+", " ", text)`           | Replaces multiple spaces with a single one |
+| `.strip()`                            | Removes extra spaces at start/end          |
+
+---
+
+Would you like me to modify this version further to also **preserve decimals (like 7.5)** and **remove unwanted dots** (e.g. `....`)?
+That’s useful for numeric fields like EMI or CIBIL score.
+
